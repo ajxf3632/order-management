@@ -18,8 +18,7 @@
         }
 
         input,
-        button,
-        select {
+        button {
             margin: 10px;
             padding: 12px;
             font-size: 18px;
@@ -59,7 +58,6 @@
             padding: 8px 12px;
             cursor: pointer;
             border-radius: 5px;
-            font-size: 16px;
         }
 
         @media (max-width: 600px) {
@@ -70,7 +68,7 @@
     </style>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
-        import { getDatabase, ref, push, set, get } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
+        import { getDatabase, ref, push, set, get, update } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCuBaV82PAvyWOoAHa0HunoCIBodFdBwv8",
@@ -89,10 +87,14 @@
         let currentOrder = [];
 
         async function getTokenNumber() {
-            const ordersRef = ref(db, 'orders');
-            const snapshot = await get(ordersRef);
-            return snapshot.exists() ? snapshot.size + 1 : 1;
+            const lastTokenRef = ref(db, 'lastToken');
+            const snapshot = await get(lastTokenRef);
+            let newToken = snapshot.exists() ? snapshot.val() + 1 : 1;
+
+            await set(lastTokenRef, newToken); // Store the updated token number
+            return newToken;
         }
+
 
         async function addItem() {
             const item = document.getElementById('item').value;
@@ -140,9 +142,18 @@
             updateOrderList();
         }
 
+        async function resetToken() {
+            await set(ref(db, "orders"), {}); // Clear all orders
+            currentToken = 1; // Reset token to 1
+            document.getElementById('orderDisplay').innerText = '';
+            alert("Token number reset!");
+        }
+
+
         window.addItem = addItem;
         window.finalizeOrder = finalizeOrder;
         window.deleteItem = deleteItem;
+        window.resetToken = resetToken;
     </script>
 </head>
 
@@ -151,16 +162,13 @@
     <div class="container">
         <input type="text" id="item" placeholder="Enter Item Name">
         <input type="number" id="quantity" placeholder="Quantity" value="1">
-        <select id="price">
-            <option value="30">₹30</option>
-            <option value="40">₹40</option>
-            <option value="50">₹50</option>
-            <option value="70" selected>₹70</option>
-            <option value="150">₹150</option>
-        </select>
+        <input type="number" id="price" placeholder="Price" value="70">
         <button onclick="addItem()">Add Item</button>
         <ul id="orderList" class="order-list"></ul>
         <button onclick="finalizeOrder()">Finalize Order</button>
+        <button onclick="resetToken()"
+            style="background: orange; color: white; border: none; padding: 12px; margin-top: 10px;">Reset
+            Token</button>
         <div id="orderDisplay" class="order-box"></div>
     </div>
 </body>
