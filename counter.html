@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Counter - Order Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            margin-top: 20px;
+            padding: 20px;
+        }
+
+        input,
+        button,
+        select {
+            margin: 10px;
+            padding: 12px;
+            font-size: 18px;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .order-box {
+            background: #fff;
+            padding: 15px;
+            margin: 15px auto;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .order-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .order-list li {
+            background: #fff;
+            margin: 5px;
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .delete-btn {
+            background: red;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                margin-top: 10px;
+            }
+        }
+    </style>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+        import { getDatabase, ref, push, set, get } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCuBaV82PAvyWOoAHa0HunoCIBodFdBwv8",
+            authDomain: "order-management-system-a34c4.firebaseapp.com",
+            databaseURL: "https://order-management-system-a34c4-default-rtdb.firebaseio.com",
+            projectId: "order-management-system-a34c4",
+            storageBucket: "order-management-system-a34c4.firebasestorage.app",
+            messagingSenderId: "855772993885",
+            appId: "1:855772993885:web:6b111feaf659fffe5430b4"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let currentToken = null;
+        let currentOrder = [];
+
+        async function getTokenNumber() {
+            const ordersRef = ref(db, 'orders');
+            const snapshot = await get(ordersRef);
+            return snapshot.exists() ? snapshot.size + 1 : 1;
+        }
+
+        async function addItem() {
+            const item = document.getElementById('item').value;
+            const quantity = document.getElementById('quantity').value || 1;
+            const price = document.getElementById('price').value || 70;
+
+            if (item) {
+                if (!currentToken) {
+                    currentToken = await getTokenNumber();
+                    document.getElementById('orderDisplay').innerText = `Token: ${currentToken}`;
+                }
+                currentOrder.push({ item, quantity, price });
+                updateOrderList();
+                document.getElementById('item').value = '';
+                document.getElementById('quantity').value = '1';
+                document.getElementById('price').value = '70';
+            }
+        }
+
+        function updateOrderList() {
+            const list = document.getElementById('orderList');
+            list.innerHTML = "";
+            currentOrder.forEach((order, index) => {
+                const li = document.createElement("li");
+                li.innerHTML = `${order.item} - ${order.quantity} x ₹${order.price} <button class="delete-btn" onclick="deleteItem(${index})">X</button>`;
+                list.appendChild(li);
+            });
+        }
+
+        function deleteItem(index) {
+            currentOrder.splice(index, 1);
+            updateOrderList();
+        }
+
+        function finalizeOrder() {
+            if (currentOrder.length === 0) {
+                alert("Add items before finalizing!");
+                return;
+            }
+            const ordersRef = ref(db, 'orders/' + currentToken);
+            set(ordersRef, { token: currentToken, items: currentOrder });
+            currentToken = null;
+            currentOrder = [];
+            document.getElementById('orderDisplay').innerText = '';
+            updateOrderList();
+        }
+
+        window.addItem = addItem;
+        window.finalizeOrder = finalizeOrder;
+        window.deleteItem = deleteItem;
+    </script>
+</head>
+
+<body>
+    <h1>Counter - Place Orders</h1>
+    <div class="container">
+        <input type="text" id="item" placeholder="Enter Item Name">
+        <input type="number" id="quantity" placeholder="Quantity" value="1">
+        <select id="price">
+            <option value="30">₹30</option>
+            <option value="40">₹40</option>
+            <option value="50">₹50</option>
+            <option value="70" selected>₹70</option>
+            <option value="150">₹150</option>
+        </select>
+        <button onclick="addItem()">Add Item</button>
+        <ul id="orderList" class="order-list"></ul>
+        <button onclick="finalizeOrder()">Finalize Order</button>
+        <div id="orderDisplay" class="order-box"></div>
+    </div>
+</body>
+
+</html>

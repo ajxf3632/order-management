@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chef - Order Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            margin-top: 20px;
+        }
+
+        .order-box {
+            background: #fff;
+            padding: 15px;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin: 10px auto;
+        }
+
+        .complete-btn {
+            background: green;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                margin-top: 10px;
+            }
+        }
+    </style>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+        import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCuBaV82PAvyWOoAHa0HunoCIBodFdBwv8",
+            authDomain: "order-management-system-a34c4.firebaseapp.com",
+            databaseURL: "https://order-management-system-a34c4-default-rtdb.firebaseio.com",
+            projectId: "order-management-system-a34c4",
+            storageBucket: "order-management-system-a34c4.firebasestorage.app",
+            messagingSenderId: "855772993885",
+            appId: "1:855772993885:web:6b111feaf659fffe5430b4"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const ordersRef = ref(db, "orders");
+
+        function updateOrders(snapshot) {
+            const container = document.getElementById("ordersContainer");
+            container.innerHTML = snapshot.exists() ? "" : "<p>No orders yet.</p>";
+
+            snapshot.forEach(orderSnap => {
+                const order = orderSnap.val();
+                const div = document.createElement("div");
+                div.className = "order-box";
+                div.innerHTML = `<h3>Token #${order.token}</h3>`;
+                order.items.forEach(item => div.innerHTML += `<p>${item.item} - ${item.quantity} x ₹${item.price}</p>`);
+                div.innerHTML += `<button class="complete-btn" onclick="completeOrder('${orderSnap.key}')">Mark as Completed</button>`;
+                container.appendChild(div);
+            });
+        }
+
+        window.completeOrder = orderKey => remove(ref(db, "orders/" + orderKey));
+        onValue(ordersRef, updateOrders);
+    </script>
+</head>
+
+<body>
+    <h1>Chef - View Orders</h1>
+    <div class="container" id="ordersContainer"></div>
+</body>
+
+</html>
